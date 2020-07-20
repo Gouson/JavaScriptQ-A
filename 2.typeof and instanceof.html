@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2.typeof and instanceof</title>
+</head>
+
+<body>
+    <script>
+        let a = 1
+        let a1 = '1'
+        let a2 = true
+        let a3 = null
+        let a4 = undefined
+        let a5 = Symbol
+        let a6 = {}
+        console.log(typeof (a), typeof (a1), typeof (a2), typeof (a3), typeof (a4), typeof (a5), typeof (a6))
+        // number string boolean object undefined function object
+
+
+
+        function person() {
+            this.name = 10
+        }
+        console.log(person instanceof person)
+        //person 函数的原型链 person.proto_ => Function.proto=> Object.proto=> null ，所以在原型链上是找不到 person 的
+    </script>
+</body>
+
+</html>
