@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前端模块化</title>
+</head>
+<style>
+    body {
+        padding: 50px 100px;
+    }
+
+    * {
+        margin: 10px 0;
+        line-height: 160%;
+    }
+
+    pre {
+        background-color: #f8f8f8;
+    }
+</style>
+
+<body>
+    <p>先说说什么是模块化，就是将独立的功能代码封装成一个独立的文件，其他模块需要使用，在进行引用。
+        模块化有利于代码的拆分和架构上的解耦，模块化在服务端领域已经早已成熟，nodejs 也已经支持模块化。
+        而在浏览器上，js
+        脚本是异步载入的，脚本按照编码顺序依次执行，依赖关系只能按照编码顺序来控制。因此前端早早就有了模块化技术，可每天醒来前端就多一个名词多一个框架的，发展实在迅猛，就前端模块化这些年的积累就有好几种，我们依次来看看。
+    </p>
+    <h3>commonjs</h3>
+    <p>先看伴随 nodejs 而诞生的 commonjs 规范。 commonjs 规范应用于 nodejs 应用中，在 nodejs 应用中每个文件就是一个模块，拥有自己的作用域，文件中的变量、函数都是私有的，与其他文件相隔离。
+    </p>
+    <p>CommonJS规范规定，每个模块内部， module 变量代表当前模块。这个变量是一个对象，它的 exports 属性（即 module.exports ）是对外的接口。加载某个模块，其实是加载该模块的
+        module.exports 属性。（引用阮一峰老师的描述）。</p>
+    <p>举个栗子看看模块化后的文件该怎么写</p>
+    <pre>
+
+    // util\index.js
+    let name = 'now';
+    let age = 18;
+
+    let fun = () => {
+        console.log('into fun');
+        name = 'change'
+    }
+
+    module.exports = {
+        name,
+        fun
+    }
+    console.log(module)
+
+    // appJsBridge\index.js
+    var { name, fun } = require('./util/index.js')
+    </pre>
+    <p>上面这个文件有两个变量，一个函数，通过 module.exports 暴露变量 name 和函数 fun ,age 这个变量就是私有的，外部无法直接访问，如果想让 age 变量全局都可以访问，那么可以改成 global.age
+        = 18 ，但这样子会污染全局作用域，会导致意想不到的惊喜（吓）。</p>
+    <p>我们看看 util\index.js 打印出来的 module</p>
+    <img src="./imgs/module" alt="">
+    <p>module 中有这些属性</p>
+    <pre>
+
+    module.id 模块的识别符，通常是带有绝对路径的模块文件名。
+    module.filename 模块的文件名，带有绝对路径。
+    module.loaded 返回一个布尔值，表示模块是否已经完成加载。
+    module.parent 返回一个module对象，表示调用该模块的模块，如果改该模块没有被引用，那么 parent 就是 null
+    module.children 返回一个module数组，表示该模块要用到的其他模块。
+    module.exports 表示模块对外输出的值。
+    module.paths 这个用于 require 查找该文件的位置。
+    </pre>
+    <p>在开发中我们常使用的就是 module.exports ， 通过 module.exports 输出的对象就是引用方 require 出来的值</p>
+    <h4>require</h4>
+    <p>既然有 module.exports 导出，那么就有与之相对应的 require 导入，如下</p>
+    <p>var { name, fun, object } = require('./util/index.js') // 不用解构，直接导出对象也可以 使用 require 我们最关心的就是文件路径，这里还是引用阮一峰老师的解释
+    </p>
+    <p>根据参数的不同格式，require命令去不同路径寻找模块文件。</p>
+    <ol>
+        <li>如果参数字符串以“/”开头，则表示加载的是一个位于绝对路径的模块文件。比如，require('/home/marco/foo.js')将加载/home/marco/foo.js。</li>
+        <li>如果参数字符串以“./”开头，则表示加载的是一个位于相对路径（跟当前执行脚本的位置相比）的模块文件。比如，require('./circle')将加载当前脚本同一目录的circle.js。</li>
+        <li>如果参数字符串不以“./“或”/“开头，则表示加载的是一个默认提供的核心模块（位于Node的系统安装目录中），或者一个位于各级node_modules目录的已安装模块（全局安装或局部安装）。大家还记得
+            module.paths 吧，这里就派上用场了。举例来说，脚本/home/user/projects/foo.js执行了require('bar.js')命令，Node会依据 module.paths
+            路径加上文件名称，依次搜索。
+            这样设计的目的是，使得不同的模块可以将所依赖的模块本地化。</li>
+        <li>如果参数字符串不以“./“或”/“开头，而且是一个路径，比如require('example-module/path/to/file')，则将先找到example-module的位置，然后再以它为参数，找到后续路径。
+        </li>
+        <li>如果指定的模块文件没有发现，Node会尝试为文件名添加.js、.json、.node后，再去搜索。.js件会以文本格式的JavaScript脚本文件解析，.json文件会以JSON格式的文本文件解析，.node文件会以编译后的二进制文件解析。所以文件名的后缀可以省略。
+        </li>
+        <li>如果想得到require命令加载的确切文件名，使用require.resolve()方法。</li>
+    </ol>
+    <h4>module.exports 和 exports</h4>
+    <p>我们还可以导出 exports 直接使用，但需要注意一点，exports 是已经定义的常量，在导出的时候不能在给它定义，如下</p>
+    <pre>
+
+    let exports = module.exports // 错误 #region exports  Identifier 'exports' has already been declared
+    exports = module.exports; // 正确的
+    </pre>
+    <p>使用 exports 我们可以这么导出对象，但需要注意一点，在导出对象前不能修改 exports 的指向，若修改 exports 就与 module.exports
+        不是一个东西了，当然你可以在导出对象后随意修改，这时候就不会影响导出。</p>
+    <pre>
+
+    exports = module.exports
+    // exports = ()=>{} 不能修改
+    exports.fun = () => {
+        console.log('into fun');
+        name = 'change'
+    }
+    exports.name = 'now';
+    // exports = ()=>{} 随你改
+    </pre>
+    <p>单独使用 exports 和 module.exports 其实没啥区别，个人建议还是使用 module.exports ，毕竟这才是常规稳妥的写法。</p>
+    <h4>隔离性</h4>
+    <p>commonjs 规范是在运行时加载的，在运行时导出对象，导出的对象与原本模块中的对象是隔离的，简单的说就是克隆了一份。看下面这个栗子</p>
+    <pre>
+
+    // util\index.js
+    let object = {
+        age: 10
+    }
+    let fun = function() {
+        console.log('modules obj', object);
+        object = { age: 99 }
+    }
+    module.exports = {
+        fun,
+        object
+    }
+    
+    // index.js
+    var { name, fun, object } = require('./util/index.js')
+    console.log('before fun', object)
+    fun()
+    console.log('end fun', object)        
+    </pre>
+    <p>执行 node index.js 看看打印</p>
+    <pre>
+
+    before fun { age: 10 }
+    modules obj { age: 10 }
+    end fun { age: 10 }    
+    </pre>
+    <p>
+        引用方调用了导出的 fun 方法，fun 方法改变了模块中的 object 对象，可是在 index.js 中导出的 object 对象并没有发生改变，所以可见 commonjs 规范下模块的导出是深克隆的。
+    </p>
+    <h4>在浏览器中使用 commonjs 规范 browserify</h4>
+    <p>因为浏览器中缺少 module exports require global 这个四个变量，所以在浏览器中没法直接使用 commonjs 规范，非要使用就需要做个转换，使用 browserify ，它是常用的 commonjs
+        转换工具，可以搭配 gulp webpack 一起使用。看下经过 browserify 处理后的代码，就截取了些关键部分。</p>
+    <img src="./imgs/module2
+        " alt="">
+    <p>把核心代码复制出来，大致的结构如下，browserify 给每一个模块都设置了一个唯一 id ，通过模块路径来映射模块id，以此来找到各个模块</p>
+    <p>原本模块中的代码被有 require module exports 这三个参数的函数所包裹，其中 require 用来加载其他模块，exports 用来导出对象。</p>
+    <pre>
+
+    !function e(t, n, r) {
+        function s(o, u) {
+            if (!n[o]) {
+                if (!t[o]) {
+                    var a = "function" == typeof require && require;
+                    if (!u && a)
+                        return a(o, !0);
+                    if (i)
+                        return i(o, !0);
+                    var f = new Error("Cannot find module '" + o + "'");
+                    throw f.code = "MODULE_NOT_FOUND",
+                    f
+                }
+                var l = n[o] = {
+                    exports: {}
+                };
+                t[o][0].call(l.exports, function(e) {
+                    var n = t[o][1][e];
+                    return s(n || e)
+                }, l, l.exports, e, t, n, r)
+            }
+            return n[o].exports
+        }
+        for (var i = "function" == typeof require && require, o = 0; o < r.length; o++)
+            s(r[o]);
+        return s
+    }({
+        1:[function(require, module, exports) {
+            "use strict"
+        },{"babel-runtime/helpers/classCallCheck": 2},[3,4]},
+        2: [function(require, module, exports) {
+            "use strict";
+            exports.__esModule = !0,
+            exports["default"] = function(instance, Constructor) {
+                if (!(instance instanceof Constructor))
+                    throw new TypeError("Cannot call a class as a function")
+            }
+        }
+        , {}]
+    },{},[])
+    </pre>
+    <h3>ES6 模块化</h3>
+    <p>ECMA推出了官方标准的模块化解决方案，使用 export 导出，import 导入，编码简洁，从语义上更加通俗易懂。</p>
+    <p>ES6 支持异步加载模块 的模块不是对象，而是在编译的时候就完成模块的引用，所以是编译时才加载的。</p>
+    <p>个人认为，ES6模块化是以后的主流。</p>
+    <p>还是上面的栗子，用ES6模块化改写，改动上并不大，几个关键字做下修改即可</p>
+    <pre>
+    
+    const appJsBridge = function(){};
+    if ("function" === typeof define) {
+        // AMD CMD
+        define(function() {
+            return appJsBridge;
+        })
+    } else if ("undefined" != typeof exports) {
+        // commonjs
+        module.exports = appJsBridge;
+    } else {
+        // 没有模块化
+        window.appJsBridge = appJsBridge;
+    }    
+    </pre>
+</body>
+
+</html>
